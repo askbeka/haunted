@@ -1,3 +1,4 @@
+import { directive } from './lit.js';
 import { contextEvent } from './symbols.js';
 import { useContext } from './use-context.js';
 import { component } from './component.js';
@@ -5,47 +6,30 @@ import { component } from './component.js';
 export const createContext = (defaultValue) => {
   const Context = {};
   
-  Context.Provider = class extends HTMLElement {
-    constructor() {
-      super();
-      this.listeners = [];
-  
-      this.eventHandler = (event) => {
-        const { detail } = event;
-      
-        if (detail.Context === Context) {
-          detail.value = this.value;
-      
-          detail.unsubscribe = () => {
-            const index = this.listeners.indexOf(detail.callback)
+  const providers = new WeakMap();
+  const templates = new WeakMap();
 
-            if (index > -1) {
-              this.listeners.splice(index, 1);
-            }
-          }
+  // can be composed like
+  // ThemeContext.Provider
+  Context.Provider = value => directive(template => (part) => {
+    template.set(this, template);
+    part.setValue(template);
+    part.commit();
 
-          this.listeners.push(detail.callback);
-  
-          event.stopPropagation();
-        }
+    let provider = providers.get(this); 
+    if (!) {
+      const provider = createProvider(value);
+
+      let current = part.startNode;
+      while (current !== part.endNode) {
+        current.__contexts = current.__contexts || [];
+        current.__contexts.push(provider);
+        current = current.nextSibling;
       }
-  
-      this.addEventListener(contextEvent, this.eventHandler);
+    } else {
+      provider.set(value);
     }
-  
-    disconnectedCallback() {
-      this.removeEventListener(contextEvent, this.eventHandler);
-    }
-
-    set value(value) {
-      this._value = value;
-      this.listeners.forEach(callback => callback(value));
-    }
-
-    get value() {
-      return this._value;
-    }
-  };
+  });
 
   Context.Consumer = component(function ({ render }) {
     const context = useContext(Context);
@@ -57,3 +41,5 @@ export const createContext = (defaultValue) => {
 
   return Context;
 }
+
+export const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)));

@@ -1,5 +1,26 @@
+import { Part } from './lit.js';
 import { contextSymbol, contextEvent } from './symbols.js';
 import { hook, Hook } from './hook.js';
+import { parts } from 'lit-html';
+
+function findProviderBoundary(node, )
+
+function findProvider(node) {
+  let startNode, endNode;
+  
+  if (node instanceof Part) {
+     ({ startNode, endNode }) = node;
+  } else {
+    startNode = node.previousSibling;
+    endNode = node.nextSibling;
+    
+    while (current && !(current instanceof Document)) {
+      current = current.parentNode || (window.ShadowRoot && current instanceof ShadowRoot ? current.host : undefined);
+    }
+
+    return current;
+  }
+}
 
 function setContexts(el, consumer) {
   if(!(contextSymbol in el)) {
